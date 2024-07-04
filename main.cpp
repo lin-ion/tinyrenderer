@@ -5,7 +5,7 @@ const TGAColor red = TGAColor(255, 0, 0, 255);
 
 void line_parametric(const int x0, const int y0, const int x1, const int y1,
                      TGAImage &image, const TGAColor &color) {
-  for (float t = 0.; t < 1.; t += .01) {
+  for (float t = 0.; t < 1.; t += .1) {
     const int x = x0 + t * (x1 - x0);
     const int y = y0 + t * (y1 - y0);
     image.set(x, y, color);
