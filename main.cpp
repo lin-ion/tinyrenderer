@@ -1,7 +1,12 @@
 #include <vector>
 #include <iostream>
 #include "geometry.h"
+#include "model.h"
 #include "tgaimage.h"
+
+Model *model = NULL;
+const int width = 800;
+const int height = 800;
 
 Vec3f barycentric(Vec2i *pts, Vec2i P){;
   Vec2i AB = Vec2i(pts[2]-pts[0]);
@@ -9,11 +14,6 @@ Vec3f barycentric(Vec2i *pts, Vec2i P){;
   Vec2i PA = Vec2i(pts[0]-P);
 
   Vec3f u = Vec3f(AB.x, AC.x, PA.x)^Vec3f(AB.y, AC.y, PA.y);
-  // u/u[2] represents barycentric coordinates
-
-  // Vec2f _uAB = Vec2f((u.raw[0]/u.raw[2])*AB.x, (u.raw[0]/u.raw[2])*AB.y);
-  // Vec2f _vAC = Vec2f((u.raw[1]/u.raw[2])*AC.x, (u.raw[1]/u.raw[2])*AC.y);
-  // std::cout << "P ("<<pts[0].x+_uAB.x+_vAC.x<<", "<<pts[0].y+_uAB.y+_vAC.y <<")\n";
 
   if (std::abs(u.z)<1) return Vec3f(-1,1,1);
   return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
@@ -40,11 +40,27 @@ void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
   }
 }
 
-int main(int argc, char** argv) { 
-    TGAImage frame(200, 200, TGAImage::RGB); 
-    Vec2i pts[3] = {Vec2i(10,10), Vec2i(100, 30), Vec2i(190, 160)}; 
-    triangle(pts, frame, TGAColor(255, 0, 0, 255)); 
-    frame.flip_vertically(); // to place the origin in the bottom left corner of the image 
-    frame.write_tga_file("framebuffer.tga");
-    return 0; 
+int main(int argc, char **argv) {
+  if (2 == argc) {
+    model = new Model(argv[1]);
+  } else {
+    model = new Model("obj/african_head.obj");
+  }
+
+  TGAImage image(width, height, TGAImage::RGB);
+
+  for (int i=0; i<model->nfaces(); i++) { 
+      std::vector<int> face = model->face(i); 
+      Vec2i screen_coords[3]; 
+      for (int j=0; j<3; j++) { 
+          Vec3f world_coords = model->vert(face[j]); 
+          screen_coords[j] = Vec2i((world_coords.x+1.)*width/2., (world_coords.y+1.)*height/2.); 
+      } 
+      triangle(screen_coords, image, TGAColor(rand()%255, rand()%255, rand()%255, 255)); 
+  }
+
+  image.flip_vertically();
+  image.write_tga_file("output.tga");
+  delete model;
+  return 0;
 }
