@@ -45,36 +45,39 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
 }
 
 void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
-  std::array<Vec2i, 3> vertices = {t0, t1, t2};
-  for (int i = 0; i < 3; i++) {
-    line(vertices[i], vertices[(i + 1) % 3], image, color);
+  if (t0.y > t1.y)
+    std::swap(t0, t1);
+  if (t0.y > t2.y)
+    std::swap(t0, t2);
+  if (t1.y > t2.y)
+    std::swap(t1, t2);
+
+  for (int y = t0.y; y <= t1.y; y++) {
+    float a = (float)(y - t0.y) / (t1.y - t0.y);
+    int x0 = t0.x + a * (t1.x - t0.x);
+
+    float b = (float)(y - t0.y) / (t2.y - t0.y);
+    int x1 = t0.x + b * (t2.x - t0.x);
+
+    if (x0 > x1)
+      std::swap(x0, x1);
+    for (int x = x0; x <= x1; x++) {
+      image.set(x, y, color);
+    }
   }
 
-  std::sort(vertices.begin(), vertices.end(),
-            [](Vec2i a, Vec2i b) { return a.y < b.y; });
+  for (int y = t1.y; y <= t2.y; y++) {
+    float a = (float)(y - t1.y) / (t2.y - t1.y);
+    int x0 = t1.x + a * (t2.x - t1.x);
 
-  Vec2i &p0 = vertices[0]; // bottom
-  Vec2i &p1 = vertices[1]; // middle
-  Vec2i &p2 = vertices[2]; // top
+    float b = (float)(y - t0.y) / (t2.y - t0.y);
+    int x1 = t0.x + b * (t2.x - t0.x);
 
-  for (int y = p0.y; y < p1.y; y++) {
-    float a = (y - p0.y) / (float)(p1.y - p0.y);
-    int x0 = p0.x + a * (p1.x - p0.x);
-
-    float b = (y - p0.y) / (float)(p2.y - p0.y);
-    int x1 = p0.x + b * (p2.x - p0.x);
-
-    line(x0, y, x1, y, image, color);
-  }
-
-  for (int y = p1.y; y <= p2.y; y++) {
-    float a = (y - p1.y) / (float)(p2.y - p1.y);
-    int x0 = p1.x + a * (p2.x - p1.x);
-
-    float b = (y - p0.y) / (float)(p2.y - p0.y);
-    int x1 = p0.x + b * (p2.x - p0.x);
-
-    line(x0, y, x1, y, image, color);
+    if (x0 > x1)
+      std::swap(x0, x1);
+    for (int x = x0; x <= x1; x++) {
+      image.set(x, y, color);
+    }
   }
 }
 
