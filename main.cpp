@@ -15,6 +15,7 @@ Vec3f barycentric(Vec2i *pts, Vec2i P){;
 
   Vec3f u = Vec3f(AB.x, AC.x, PA.x)^Vec3f(AB.y, AC.y, PA.y);
 
+  // abs(u.z) means area of triangle
   if (std::abs(u.z)<1) return Vec3f(-1,1,1);
   return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
 }
@@ -49,14 +50,23 @@ int main(int argc, char **argv) {
 
   TGAImage image(width, height, TGAImage::RGB);
 
+  Vec3f light_dir(0,0,-1);
+
   for (int i=0; i<model->nfaces(); i++) { 
       std::vector<int> face = model->face(i); 
       Vec2i screen_coords[3]; 
-      for (int j=0; j<3; j++) { 
-          Vec3f world_coords = model->vert(face[j]); 
-          screen_coords[j] = Vec2i((world_coords.x+1.)*width/2., (world_coords.y+1.)*height/2.); 
-      } 
-      triangle(screen_coords, image, TGAColor(rand()%255, rand()%255, rand()%255, 255)); 
+      Vec3f world_coords[3];
+      for (int j=0; j<3; j++) {
+          Vec3f v = model->vert(face[j]);
+          screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1)*height/2.);
+          world_coords[j] = v;
+      }
+      Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+      n.normalize();
+      float intencity = n*light_dir; // dot product
+      if(intencity>0) {
+        triangle(screen_coords, image, TGAColor(intencity*255, intencity*255, intencity*255, 255));
+      }
   }
 
   image.flip_vertically();
