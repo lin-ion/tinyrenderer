@@ -45,38 +45,35 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
 }
 
 void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
-  if (t0.y > t1.y)
-    std::swap(t0, t1);
-  if (t0.y > t2.y)
-    std::swap(t0, t2);
-  if (t1.y > t2.y)
-    std::swap(t1, t2);
+  if (t0.y > t1.y) std::swap(t0, t1);
+  if (t0.y > t2.y) std::swap(t0, t2);
+  if (t1.y > t2.y) std::swap(t1, t2);
 
-  for (int y = t0.y; y <= t1.y; y++) {
-    float a = (float)(y - t0.y) / (t1.y - t0.y);
-    int x0 = t0.x + a * (t1.x - t0.x);
+  int total_height = t2.y - t0.y;
+  for (int y=t0.y; y<=t1.y; y++) {
+    int segment_height = t1.y-t0.y+1;
+    float alpha = (float)(y - t0.y) / total_height;
+    float beta = (float)(y - t0.y) / segment_height;
 
-    float b = (float)(y - t0.y) / (t2.y - t0.y);
-    int x1 = t0.x + b * (t2.x - t0.x);
-
-    if (x0 > x1)
-      std::swap(x0, x1);
-    for (int x = x0; x <= x1; x++) {
-      image.set(x, y, color);
+    Vec2i A = t0 + (t2-t0)*alpha;
+    Vec2i B = t0 + (t1-t0)*beta;
+    if(A.x>B.x) std::swap(A, B);
+    for (int j=A.x; j<=B.x; j++){
+      image.set(j, y, color);
     }
   }
+  
+  for (int y=t1.y; y<=t2.y; y++) {
+    int segment_height = t2.y-t1.y+1;
+    float alpha = (float)(y - t0.y) / total_height;
+    float beta = (float)(y - t1.y) / segment_height;
+    Vec2i A = t0 + (t2-t0)*alpha;
+    Vec2i B = t1 + (t2-t1)*beta;
 
-  for (int y = t1.y; y <= t2.y; y++) {
-    float a = (float)(y - t1.y) / (t2.y - t1.y);
-    int x0 = t1.x + a * (t2.x - t1.x);
-
-    float b = (float)(y - t0.y) / (t2.y - t0.y);
-    int x1 = t0.x + b * (t2.x - t0.x);
-
-    if (x0 > x1)
-      std::swap(x0, x1);
-    for (int x = x0; x <= x1; x++) {
-      image.set(x, y, color);
+    if (A.x > B.x)
+      std::swap(A, B);
+    for (int j=A.x; j<=B.x; j++){
+      image.set(j, y, color);
     }
   }
 }
