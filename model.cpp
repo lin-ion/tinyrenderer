@@ -20,11 +20,9 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
             for (int i=0;i<3;i++) iss >> v.raw[i];
             verts_.push_back(v);
         } else if (!line.compare(0, 2, "f ")) {
-            std::vector<int> f;
-            int itrash, idx;
             iss >> trash;
-            std::vector<int> t_f;
-            int t_idx;
+            std::vector<int> f, t_f;
+            int itrash, idx, t_idx;
             while (iss >> idx >> trash >> t_idx >> trash >> itrash) {
                 idx--; // in wavefront obj all indices start at 1, not zero
                 f.push_back(idx);
@@ -33,10 +31,10 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
             faces_.push_back(f);
             t_faces_.push_back(t_f);
         } else if (!line.compare(0, 4, "vt  ")) {
+            iss >> trash >> trash;
             Vec2f vt;
             float ftrash;
-            iss >> trash;
-            iss >> vt.raw[0] >> vt.raw[1] >> ftrash; // u v 0
+            iss >> vt.u >> vt.v >> ftrash;
             t_verts_.push_back(vt);
         }
     }
