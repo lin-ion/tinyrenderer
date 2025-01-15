@@ -96,6 +96,24 @@ int main(int argc, char **argv) {
 
   image.flip_vertically();
   image.write_tga_file("output.tga");
+
+  {
+    TGAImage image_z(width, height, TGAImage::RGB);
+    for (int x=0; x<width; x++){
+      for (int y=0; y<height; y++){
+        float z = zbuffer[x+y*width];
+        z = std::max(-1.f, std::min(1.f, z)); // clamp
+        z = (z+1.)/2.; // normalize
+        z = std::pow(z, 2.2f); // gamma collection
+
+        image_z.set(x,y,TGAColor(z*255,z*255,z*255,255));
+      }
+    }
+
+    image_z.flip_vertically();
+    image_z.write_tga_file("zbuffer.tga");
+  }
+
   delete model;
   return 0;
 }
