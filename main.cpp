@@ -24,7 +24,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P){;
   return Vec3f(1.f-(u.x+u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Vec2f *t_pts) {
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Vec2f *t_pts, float intencity) {
   Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
   Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
   Vec2f clamp(image.get_width()-1, image.get_height()-1);
@@ -61,6 +61,10 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Ve
         tP.v = tP.v*(texture.get_height()-1.)+.5;
 
         TGAColor color = texture.get(tP.u, tP.v);
+
+        for (int i=0; i<3; i++) {
+          color.raw[i] = color.raw[i] * intencity;
+        }
 
         image.set(P.x, P.y, color);
       }
@@ -106,13 +110,15 @@ int main(int argc, char **argv) {
       Vec2f vt = model->t_vert(t_face[j]);
       texture_coords[j] = vt;
     }
-    // Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-    // n.normalize();
-    // float intencity = n*light_dir; // dot product
 
-    triangle(screen_coords, zbuffer, image, texture, texture_coords);
+    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+    n.normalize();
+    float intencity = n*light_dir; // dot product
+    
+    if(intencity>0) {
+      triangle(screen_coords, zbuffer, image, texture, texture_coords, intencity);
+    }
   }
-
 
   image.flip_vertically();
   image.write_tga_file("output.tga");
