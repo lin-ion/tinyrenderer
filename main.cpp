@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include "geometry.h"
 #include "model.h"
 #include "tgaimage.h"
@@ -74,20 +75,23 @@ int main(int argc, char **argv) {
   for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
   for (int i=0; i<model->nfaces(); i++) { 
-      std::vector<int> face = model->face(i); 
-      Vec3f screen_coords[3]; 
-      Vec3f world_coords[3];
-      for (int j=0; j<3; j++) {
-          Vec3f v = model->vert(face[j]);
-          screen_coords[j] = world2screen(v);
-          world_coords[j] = v;
-      }
-      Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-      n.normalize();
-      float intencity = n*light_dir; // dot product
-      if(intencity>0) {
-        triangle(screen_coords, zbuffer, image, TGAColor(intencity*255, intencity*255, intencity*255, 255));
-      }
+    std::vector<int> face = model->face(i); 
+    Vec3f screen_coords[3]; 
+    Vec3f world_coords[3];
+    for (int j=0; j<3; j++) {
+        Vec3f v = model->vert(face[j]);
+        screen_coords[j] = world2screen(v);
+        world_coords[j] = v;
+    }
+    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+    n.normalize();
+    float intencity = n*light_dir; // dot product
+
+    // gamma collection
+    intencity = std::pow(intencity, 2.2f);
+    if(intencity>0) {
+      triangle(screen_coords, zbuffer, image, TGAColor(intencity*255, intencity*255, intencity*255, 255));
+    }
   }
 
   image.flip_vertically();
