@@ -9,3 +9,7 @@
 | Lesson 3: Hidden faces removal <br> & Gamma correction | Visualized z buffer |
 | - | - |
 | ![](pngs/lesson3.png) | ![](pngs/lesson3_zbuffer.png) |
+
+| Lesson 3 Homework: Texture mapping | Apply light intencity |
+| - | - |
+| ![](pngs/lesson3_texture.png) | ![](pngs/lesson3_texture_lighting.png) |
