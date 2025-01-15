@@ -1,0 +1,1 @@
+[github.com/ssloy/tinyrenderer/wiki]()
