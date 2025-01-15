@@ -5,7 +5,7 @@
 #include <vector>
 #include "model.h"
 
-Model::Model(const char *filename) : verts_(), faces_() {
+Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) return;
@@ -23,11 +23,21 @@ Model::Model(const char *filename) : verts_(), faces_() {
             std::vector<int> f;
             int itrash, idx;
             iss >> trash;
-            while (iss >> idx >> trash >> itrash >> trash >> itrash) {
+            std::vector<int> t_f;
+            int t_idx;
+            while (iss >> idx >> trash >> t_idx >> trash >> itrash) {
                 idx--; // in wavefront obj all indices start at 1, not zero
                 f.push_back(idx);
+                t_f.push_back(t_idx);
             }
             faces_.push_back(f);
+            t_faces_.push_back(t_f);
+        } else if (!line.compare(0, 4, "vt  ")) {
+            Vec2f vt;
+            float ftrash;
+            iss >> trash;
+            iss >> vt.raw[0] >> vt.raw[1] >> ftrash; // u v 0
+            t_verts_.push_back(vt);
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
@@ -52,3 +62,18 @@ Vec3f Model::vert(int i) {
     return verts_[i];
 }
 
+int Model::nt_verts() {
+    return (int)t_verts_.size();
+}
+
+int Model::nt_faces() {
+    return (int)t_faces_.size();
+}
+
+Vec2f Model::t_vert(int i){
+    return t_verts_[i];
+}
+
+std::vector<int> Model::t_face(int idx) {
+    return t_faces_[idx];
+}
