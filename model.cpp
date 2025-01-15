@@ -39,6 +39,7 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
+    std::cerr << "# t_v# " << t_verts_.size() << " t_f# "  << t_faces_.size() << std::endl;
 }
 
 Model::~Model() {
