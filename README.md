@@ -1,4 +1,4 @@
-[github.com/ssloy/tinyrenderer/wiki]()
+[https://github.com/ssloy/tinyrenderer/wiki](https://github.com/ssloy/tinyrenderer/wiki)
 
 # Outputs
 
