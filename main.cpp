@@ -24,7 +24,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P){;
   return Vec3f(1.f-(u.x+u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Vec2f *t_pts) {
   Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
   Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
   Vec2f clamp(image.get_width()-1, image.get_height()-1);
@@ -36,20 +36,32 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
     bboxmax.y = std::min(clamp.y, std::max(bboxmax.y, pts[i].y));
   }
   Vec3f P;
-  for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++){
-    for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++){
+  for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
+    for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
       Vec3f bc_screen = barycentric(pts, P);
-      if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
-      
-      // compute z-value
-      // 삼각형의 정점들의 z-value와 각 정점에 대한 barycentric 가중치를 곱하여 더하면 P의 z-value가 계산된다. 
-      P.z = 0.f;
-      P.z += pts[0].z * bc_screen.raw[0];
-      P.z += pts[1].z * bc_screen.raw[1];
-      P.z += pts[2].z * bc_screen.raw[2];
+      if (bc_screen.raw[0]<0 || bc_screen.raw[1]<0 || bc_screen.raw[2]<0) continue;
 
-      if (zbuffer[int(P.x+P.y*width)]<P.z){
+      // compute z-value
+      // 삼각형의 정점들의 z-value와 각 정점에 대한 barycentric 가중치를 곱하여 더하면 P의 z-value가 계산된다.
+      P.z = 0.f;
+      for (int i=0; i<3; i++) {
+        P.z += bc_screen.raw[i] * pts[i].z;
+      }
+
+      if (zbuffer[int(P.x+P.y*width)]<P.z) {
         zbuffer[int(P.x+P.y*width)] = P.z;
+
+        // compute texture color
+        Vec2f tP = Vec2f(0., 0.);
+        for (int i=0; i<3; i++) {
+          tP.u += bc_screen.raw[i] * t_pts[i].u;
+          tP.v += bc_screen.raw[i] * t_pts[i].v;
+        }
+        tP.u = tP.u*(texture.get_width()-1.)+.5;
+        tP.v = tP.v*(texture.get_height()-1.)+.5;
+
+        TGAColor color = texture.get(tP.u, tP.v);
+
         image.set(P.x, P.y, color);
       }
     }
@@ -69,30 +81,38 @@ int main(int argc, char **argv) {
 
   TGAImage image(width, height, TGAImage::RGB);
 
+  TGAImage texture;
+  texture.read_tga_file("obj/african_head_diffuse.tga");
+  texture.flip_vertically();
+
   Vec3f light_dir(0,0,-1);
 
   float *zbuffer = new float[width*height];
   for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
-  for (int i=0; i<model->nfaces(); i++) { 
-    std::vector<int> face = model->face(i); 
-    Vec3f screen_coords[3]; 
+  for (int i=0; i<model->nfaces(); i++) {
+    std::vector<int> face = model->face(i);
+    Vec3f screen_coords[3];
     Vec3f world_coords[3];
     for (int j=0; j<3; j++) {
         Vec3f v = model->vert(face[j]);
         screen_coords[j] = world2screen(v);
         world_coords[j] = v;
     }
-    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-    n.normalize();
-    float intencity = n*light_dir; // dot product
 
-    // gamma collection
-    intencity = std::pow(intencity, 2.2f);
-    if(intencity>0) {
-      triangle(screen_coords, zbuffer, image, TGAColor(intencity*255, intencity*255, intencity*255, 255));
+    std::vector<int> t_face = model->t_face(i);
+    Vec2f texture_coords[3];
+    for (int j=0; j<3; j++) {
+      Vec2f vt = model->t_vert(t_face[j]);
+      texture_coords[j] = vt;
     }
+    // Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+    // n.normalize();
+    // float intencity = n*light_dir; // dot product
+
+    triangle(screen_coords, zbuffer, image, texture, texture_coords);
   }
+
 
   image.flip_vertically();
   image.write_tga_file("output.tga");
