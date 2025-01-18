@@ -17,7 +17,7 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
         if (!line.compare(0, 2, "v ")) {
             iss >> trash;
             Vec3f v;
-            for (int i=0;i<3;i++) iss >> v.raw[i];
+            for (int i=0;i<3;i++) iss >> v[i];
             verts_.push_back(v);
         } else if (!line.compare(0, 2, "f ")) {
             iss >> trash;
@@ -35,7 +35,7 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
             iss >> trash >> trash;
             Vec2f vt;
             float ftrash;
-            iss >> vt.u >> vt.v >> ftrash;
+            iss >> vt.x >> vt.y >> ftrash;
             t_verts_.push_back(vt);
         }
     }
