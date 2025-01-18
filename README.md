@@ -10,10 +10,10 @@
 | - | - |
 | ![](pngs/lesson3.png) | ![](pngs/lesson3_zbuffer.png) |
 
-| Lesson 3 Homework: Texture mapping | Apply light intencity |
+| Lesson 3 Homework: Texture mapping | Lesson 4: Perspective projection |
 | - | - |
-| ![](pngs/lesson3_texture.png) | ![](pngs/lesson3_texture_lighting.png) |
+| ![](pngs/lesson3_texture_lighting.png) | ![](pngs/lesson4.png) |
 
-| Lesson 4: Perspective projection | Lesson 5: Camera transformation |
+| Lesson 5: Camera transformation <br> & Gouraud Shading | Texture mapping |
 | - | - |
-| ![](pngs/lesson4.png) | ![](pngs/lesson5.png) |
+| ![](pngs/lesson5.png) | ![](pngs/lesson5_texture.png) |
