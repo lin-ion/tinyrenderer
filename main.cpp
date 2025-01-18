@@ -8,6 +8,7 @@
 Model *model = NULL;
 const int width = 800;
 const int height = 800;
+const int depth = 255;
 
 Vec3f barycentric(Vec3f *pts, Vec3f P){;
   Vec3f AB = Vec3f(pts[1]-pts[0]);
@@ -89,6 +90,18 @@ Vec3f mat2vec(Matrix p) {
   );
 }
 
+Matrix viewport(int x, int y, int w, int h) {
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x+w/2.f;
+    m[1][3] = y+h/2.f;
+    m[2][3] = depth/2.f;
+
+    m[0][0] = w/2.f;
+    m[1][1] = h/2.f;
+    m[2][2] = depth/2.f;
+    return m;
+}
+
 int main(int argc, char **argv) {
   if (2 == argc) {
     model = new Model(argv[1]);
@@ -108,14 +121,10 @@ int main(int argc, char **argv) {
   for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
   Vec3f camera = Vec3f(0,0,2);
-  Matrix projection = Matrix::identity(4);
-  projection[3][2] = -1.f/camera.z;
-  Matrix viewport = Matrix::identity(4);
+  Matrix Projection = Matrix::identity(4);
+  Projection[3][2] = -1.f/camera.z;
+  Matrix ViewPort = viewport(width/8, height/8, width*3/4, height*3/4);
   // transpose 1, multiply d/2
-  viewport[0][3] = width/2.f;
-  viewport[1][3] = height/2.f;
-  viewport[0][0] = width/2.f;
-  viewport[1][1] = height/2.f;
 
   for (int i=0; i<model->nfaces(); i++) {
     std::vector<int> face = model->face(i);
@@ -123,7 +132,7 @@ int main(int argc, char **argv) {
     Vec3f world_coords[3];
     for (int j=0; j<3; j++) {
         Vec3f v = model->vert(face[j]);
-        screen_coords[j] = mat2vec(viewport*projection*vec2mat(v));
+        screen_coords[j] = mat2vec(ViewPort*Projection*vec2mat(v));
         world_coords[j] = v;
     }
 
@@ -144,21 +153,6 @@ int main(int argc, char **argv) {
 
   image.flip_vertically();
   image.write_tga_file("output.tga");
-
-  {
-    TGAImage image_z(width, height, TGAImage::RGB);
-    for (int x=0; x<width; x++){
-      for (int y=0; y<height; y++){
-        float z = zbuffer[x+y*width];
-        z = std::max(-1.f, std::min(1.f, z)); // clamp
-        z = (z+1.)/2.; // normalize
-        z = std::pow(z, 2.2f); // gamma collection
-        image_z.set(x,y,TGAColor(z*255,z*255,z*255,255));
-      }
-    }
-    image_z.flip_vertically();
-    image_z.write_tga_file("zbuffer.tga");
-  }
 
   delete model;
   delete[] zbuffer;
