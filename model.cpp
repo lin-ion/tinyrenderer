@@ -5,7 +5,7 @@
 #include <vector>
 #include "model.h"
 
-Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() {
+Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_(), vert_norms_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) return;
@@ -37,6 +37,11 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
             float ftrash;
             iss >> vt.x >> vt.y >> ftrash;
             t_verts_.push_back(vt);
+        } else if (!line.compare(0, 4, "vn  ")) {
+            iss >> trash >> trash;
+            Vec3f vn;
+            iss >> vn.x >> vn.y >> vn.z;
+            vert_norms_.push_back(vn);
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
@@ -46,34 +51,38 @@ Model::Model(const char *filename) : verts_(), faces_(), t_verts_(), t_faces_() 
 Model::~Model() {
 }
 
-int Model::nverts() {
-    return (int)verts_.size();
+Vec3f Model::vert(int idx) {
+    return verts_[idx];
 }
 
-int Model::nfaces() {
-    return (int)faces_.size();
+int Model::nverts() {
+    return (int)verts_.size();
 }
 
 std::vector<int> Model::face(int idx) {
     return faces_[idx];
 }
 
-Vec3f Model::vert(int i) {
-    return verts_[i];
+int Model::nfaces() {
+    return (int)faces_.size();
+}
+
+Vec2f Model::t_vert(int idx){
+    return t_verts_[idx];
 }
 
 int Model::nt_verts() {
     return (int)t_verts_.size();
 }
 
+std::vector<int> Model::t_face(int idx) {
+    return t_faces_[idx];
+}
+
 int Model::nt_faces() {
     return (int)t_faces_.size();
 }
 
-Vec2f Model::t_vert(int i){
-    return t_verts_[i];
-}
-
-std::vector<int> Model::t_face(int idx) {
-    return t_faces_[idx];
+Vec3f Model::vert_norm(int idx){
+    return vert_norms_[idx];
 }

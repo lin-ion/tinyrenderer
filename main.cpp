@@ -10,6 +10,9 @@ const int width = 800;
 const int height = 800;
 const int depth = 255;
 
+Vec3f light_dir(0.f, 0.f, 1.f);
+Vec3f camera(0.f,0.f,4.f);
+
 Vec3f barycentric(Vec3f *pts, Vec3f P){;
   Vec3f AB = Vec3f(pts[1]-pts[0]);
   Vec3f AC = Vec3f(pts[2]-pts[0]);
@@ -25,7 +28,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P){;
   return Vec3f(1.f-(u.x+u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Vec2f *t_pts, float intencity) {
+void triangle(TGAImage &image, Vec3f *pts, float *zbuffer, float *intensities) {
   Vec2i bboxmin( std::numeric_limits<int>::max(),  std::numeric_limits<int>::max());
   Vec2i bboxmax(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max());
   Vec2i clamp(image.get_width()-1, image.get_height()-1);
@@ -52,22 +55,17 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAImage &texture, Ve
       if (zbuffer[int(P.x+P.y*width)]<P.z) {
         zbuffer[int(P.x+P.y*width)] = P.z;
 
-        // compute texture color
-        Vec2f tP = Vec2f(0., 0.);
-        for (int i=0; i<3; i++) {
-          tP.x += bc_screen[i] * t_pts[i].x;
-          tP.y += bc_screen[i] * t_pts[i].y;
-        }
-        tP.x = tP.x*(texture.get_width()-1.)+.5;
-        tP.y = tP.y*(texture.get_height()-1.)+.5;
-
-        TGAColor color = texture.get(tP.x, tP.y);
+        float intensity = 0.f;
 
         for (int i=0; i<3; i++) {
-          color.raw[i] = color.raw[i] * intencity;
+          intensity += bc_screen[i] * intensities[i];
         }
 
-        image.set(P.x, P.y, color);
+        if (intensity > 0) {
+          intensity = std::pow(intensity, 2.2f) * 255;
+          TGAColor color = TGAColor(intensity,intensity,intensity,255);
+          image.set(P.x, P.y, color);
+        }
       }
     }
   }
@@ -111,44 +109,27 @@ int main(int argc, char **argv) {
 
   TGAImage image(width, height, TGAImage::RGB);
 
-  TGAImage texture;
-  texture.read_tga_file("obj/african_head_diffuse.tga");
-  texture.flip_vertically();
-
-  Vec3f light_dir(0,0,-1);
-
   float *zbuffer = new float[width*height];
   for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
-  Vec3f camera = Vec3f(0,0,2);
   Matrix Projection = Matrix::identity(4);
   Projection[3][2] = -1.f/camera.z;
   Matrix ViewPort = viewport(width/8, height/8, width*3/4, height*3/4);
-  // transpose 1, multiply d/2
 
   for (int i=0; i<model->nfaces(); i++) {
     std::vector<int> face = model->face(i);
     Vec3f screen_coords[3];
-    Vec3f world_coords[3];
+    float intensities[3];
+
     for (int j=0; j<3; j++) {
         Vec3f v = model->vert(face[j]);
         screen_coords[j] = mat2vec(ViewPort*Projection*vec2mat(v));
-        world_coords[j] = v;
+
+        Vec3f vn = model->vert_norm(face[j]);
+        intensities[j] = vn * light_dir;
     }
 
-    std::vector<int> t_face = model->t_face(i);
-    Vec2f texture_coords[3];
-    for (int j=0; j<3; j++) {
-      texture_coords[j] = model->t_vert(t_face[j]);
-    }
-
-    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-    n.normalize();
-    float intencity = n*light_dir; // dot product
-    
-    if(intencity>0) {
-      triangle(screen_coords, zbuffer, image, texture, texture_coords, intencity);
-    }
+    triangle(image, screen_coords, zbuffer, intensities);
   }
 
   image.flip_vertically();
