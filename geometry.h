@@ -3,6 +3,8 @@
 
 #include <cmath>
 
+class Matrix;
+
 template <class t> struct Vec2 {
     t x, y;
     Vec2() : x(t()), y(t()) {}
@@ -27,6 +29,7 @@ template <class t> struct Vec3 {
     Vec3() : x(t()), y(t()), z(t()) { }
     Vec3(t _x, t _y, t _z) : x(_x), y(_y), z(_z) {}
     template <class u> Vec3(const Vec3<u> &v);
+    Vec3(Matrix p);
     Vec3(const Vec3<t> &v) : x(t()), y(t()), z(t()) { *this = v; }
     Vec3<t> & operator =(const Vec3<t> &v) {
         if (this != &v) {
@@ -75,6 +78,7 @@ class Matrix {
     int rows, cols;
 public:
     Matrix(int r=DEFAULT_ALLOC, int c=DEFAULT_ALLOC);
+    Matrix(const Vec3f &v);
     inline int nrows();
     inline int ncols();
 

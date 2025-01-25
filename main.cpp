@@ -10,9 +10,6 @@ const int width = 800;
 const int height = 800;
 const int depth = 255;
 
-Vec3f light_dir(0.f, 0.f, 1.f);
-Vec3f camera(0.f,0.f,4.f);
-
 Vec3f barycentric(Vec3f *pts, Vec3f P){;
   Vec3f AB = Vec3f(pts[1]-pts[0]);
   Vec3f AC = Vec3f(pts[2]-pts[0]);
@@ -20,7 +17,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P){;
 
   Vec3f u = Vec3f(AB.x, AC.x, PA.x)^Vec3f(AB.y, AC.y, PA.y);
 
-  // abs(u.z) means area of triangle
+  // abs(u.z) means double of area of the triangle
   if (std::abs(u.z)<1) return Vec3f(-1,1,1);
   // A: 1.f-(u.x+u.y)/u.z
   // B: u.x/u.z
@@ -71,23 +68,6 @@ void triangle(TGAImage &image, Vec3f *pts, float *zbuffer, float *intensities) {
   }
 }
 
-Matrix vec2mat(Vec3f v) {
-  Matrix p = Matrix(4,1);
-  p[0][0] = v.x;
-  p[1][0] = v.y;
-  p[2][0] = v.z;
-  p[3][0] = 1.f;
-  return p;
-}
-
-Vec3f mat2vec(Matrix p) {
-  return Vec3f(
-    p[0][0]/p[3][0],
-    p[1][0]/p[3][0],
-    p[2][0]/p[3][0]
-  );
-}
-
 Matrix viewport(int x, int y, int w, int h) {
     Matrix m = Matrix::identity(4);
     m[0][3] = x+w/2.f;
@@ -98,6 +78,21 @@ Matrix viewport(int x, int y, int w, int h) {
     m[1][1] = h/2.f;
     m[2][2] = depth/2.f;
     return m;
+}
+
+Matrix lookAt(Vec3f eye, Vec3f center, Vec3f up) {
+  Vec3f z = (eye-center).normalize();
+  Vec3f x = (up^z).normalize();
+  Vec3f y = (z^x).normalize();
+  Matrix Minv = Matrix::identity(4);
+  Matrix Tr = Matrix::identity(4);
+  for (int i=0; i<3; i++) {
+    Minv[0][i] = x[i];
+    Minv[1][i] = y[i];
+    Minv[2][i] = z[i];
+    Tr[i][3] = -center[i];
+  }
+  return Minv*Tr;
 }
 
 int main(int argc, char **argv) {
@@ -112,9 +107,16 @@ int main(int argc, char **argv) {
   float *zbuffer = new float[width*height];
   for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
+  Vec3f light_dir = Vec3f(1.f, -1.f, 1.f).normalize();
+
+  Vec3f eye(1.f, 1.f, 3.f);
+  Vec3f center(0.f, 0.f, 0.f);
+  Vec3f up(0.f, 1.f, 0.f);
+
+  Matrix ModelView = lookAt(eye, center, up);
   Matrix Projection = Matrix::identity(4);
-  Projection[3][2] = -1.f/camera.z;
   Matrix ViewPort = viewport(width/8, height/8, width*3/4, height*3/4);
+  Projection[3][2] = -1.f/(eye-center).z;
 
   for (int i=0; i<model->nfaces(); i++) {
     std::vector<int> face = model->face(i);
@@ -123,7 +125,7 @@ int main(int argc, char **argv) {
 
     for (int j=0; j<3; j++) {
         Vec3f v = model->vert(face[j]);
-        screen_coords[j] = mat2vec(ViewPort*Projection*vec2mat(v));
+        screen_coords[j] = Vec3f(ViewPort*Projection*ModelView*Matrix(v));
 
         Vec3f vn = model->vert_norm(face[j]);
         intensities[j] = vn * light_dir;
