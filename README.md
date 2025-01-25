@@ -13,3 +13,7 @@
 | Lesson 3 Homework: Texture mapping | Apply light intencity |
 | - | - |
 | ![](pngs/lesson3_texture.png) | ![](pngs/lesson3_texture_lighting.png) |
+
+| Lesson 4: Perspective projection | Lesson 5: Camera transformation |
+| - | - |
+| ![](pngs/lesson4.png) | ![](pngs/lesson5.png) |
