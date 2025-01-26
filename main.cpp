@@ -16,7 +16,7 @@ Vec3f    center(0,0,0);
 Vec3f        up(0,1,0);
 
 struct GouraudShader : public IShader {
-    Vec3f varying_intensity; // written by vertex shader, read by fragment shader
+    Vec3f varying_intensity{}; // written by vertex shader, read by fragment shader
 
     virtual Vec4f vertex(int iface, int nthvert) {
         Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert)); // read the vertex from .obj file
