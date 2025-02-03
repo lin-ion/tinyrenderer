@@ -21,6 +21,8 @@ struct Shader : public IShader {
     mat<3,3,float> varying_nrm; // normal per vertex to be interpolated by FS
     mat<3,3,float> ndc_tri;
 
+    mat<4,4,float> uniform_M;   //  Projection*ModelView
+
     virtual Vec4f vertex(int iface, int nthvert) {
         varying_uv.set_col(nthvert, model->uv(iface, nthvert));
         varying_nrm.set_col(nthvert, proj<3>((Projection*ModelView).invert_transpose()*embed<4>(model->normal(iface, nthvert), 0.f)));
@@ -53,8 +55,12 @@ struct Shader : public IShader {
         // tangent 공간에서 (i,j,bn) 공간으로 매핑
         Vec3f n = (B*model->normal(uv)).normalize();
 
-        float diff = std::max(0.f, n*light_dir);
-        color = model->diffuse(uv)*diff;
+        Vec3f l = proj<3>(uniform_M *embed<4>(light_dir)).normalize();
+        Vec3f r = (n*(n*l*2.f) - l).normalize();
+        float spec = pow(std::max(r.z, 0.0f), model->specular(uv));
+        float diff = std::max(0.f, n*l);
+        color = model->diffuse(uv);
+        for (int i=0; i<3; i++) color[i] = std::min<float>(5 + color[i]*(diff + .6*spec), 255);
 
         return false;
     }
@@ -77,6 +83,7 @@ int main(int argc, char** argv) {
     for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
     Shader shader;
+    shader.uniform_M = Projection*ModelView;
 
     for (int i=0; i<model->nfaces(); i++) {
         for (int j=0; j<3; j++) {
